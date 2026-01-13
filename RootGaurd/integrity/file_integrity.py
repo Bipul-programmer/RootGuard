@@ -1,4 +1,6 @@
-import hashlib, os
+import hashlib
+import os
+import time
 
 critical = [
     # Authentication & Privilege Escalation
@@ -43,13 +45,28 @@ critical = [
 ]
 
 def checksum(path):
-    with open(path,'rb') as f:
+    with open(path, 'rb') as f:
         return hashlib.sha256(f.read()).hexdigest()
 
-baseline = {f: checksum(f) for f in critical}
-
-while True:
+def file_integrity_check():
+    baseline = {}
     for f in critical:
-        if checksum(f) != baseline[f]:
-            print("[ALERT] Binary Modified:", f)
+        try:
+            if os.path.exists(f):
+                baseline[f] = checksum(f)
+        except (FileNotFoundError, PermissionError) as e:
+            print(f"[WARNING] Cannot create baseline for {f}: {e}")
+
+    while True:
+        for f in critical:
+            try:
+                if f in baseline and os.path.exists(f):
+                    current_checksum = checksum(f)
+                    if current_checksum != baseline[f]:
+                        print(f"[ALERT] Binary Modified: {f}")
+                        print(f"  Old hash: {baseline[f][:16]}...")
+                        print(f"  New hash: {current_checksum[:16]}...")
+            except (FileNotFoundError, PermissionError):
+                continue
+        time.sleep(10)
 

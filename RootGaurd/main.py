@@ -20,7 +20,10 @@ def log_event(message):
 def start_kernel_check():
     try:
         log_event("Starting kernel integrity check")
-        subprocess.Popen(["bash", "integrity/kernel_check.sh"])
+        script_path = os.path.join(os.path.dirname(__file__), "integrity", "kernel_check.sh")
+        subprocess.Popen(["bash", script_path], 
+                        stdout=subprocess.PIPE, 
+                        stderr=subprocess.PIPE)
     except Exception as e:
         log_event(f"Kernel check failed: {e}")
 
